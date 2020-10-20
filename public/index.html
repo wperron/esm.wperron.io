@@ -2,7 +2,27 @@
 <head>
     <meta charset="utf8" />
     <title>wperron.io | Deno Modules</title>
+    <script src="./aws-sdk-2.774.0.min.js"></script>
 </head>
 <body>
-    <h1>Hello World!</h1>
+    <h1>Personal Deno Regsitry</h1>
+
+    <div id="content"></div>
+
+    <script type="module">
+        AWS.config.region = 'ca-central-1';
+        AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+            IdentityPoolId: 'ca-central-1:8b84b2fb-8c78-419a-96e1-5d5a9e79d999',
+        });
+
+        AWS.config.credentials.refresh();
+
+        console.log(AWS.config.credentials);
+
+        const s3 = new AWS.S3();
+
+        s3.listObjects({ Bucket: "deno.wperron.io" }).promise().then(res => {
+            console.log(res);
+        });
+    </script>
 </body>

@@ -3,17 +3,17 @@ resource "random_uuid" "this" {}
 locals {
   suffix = substr(random_uuid.this.result, 0, 8)
   tags = {
-    "wperron.io/site" = "deno.wperron.io"
+    "wperron.io/site"     = "deno.wperron.io"
     "wperron.io/instance" = local.suffix
-    "wperron.io/env" = var.env
+    "wperron.io/env"      = var.env
   }
 }
 
 # Terraform State Management
 resource "aws_s3_bucket" "state" {
   bucket = "deno.wperron.io-state-${local.suffix}"
-  acl = "private"
-  tags = local.tags
+  acl    = "private"
+  tags   = local.tags
   versioning {
     enabled = true
   }
@@ -30,8 +30,8 @@ resource "aws_s3_bucket_public_access_block" "state" {
 # Module storage
 resource "aws_s3_bucket" "modules" {
   bucket = "deno.wperron.io"
-  acl = "private"
-  tags = local.tags
+  acl    = "private"
+  tags   = local.tags
   versioning {
     enabled = true
   }
@@ -42,6 +42,14 @@ resource "aws_s3_bucket" "modules" {
         sse_algorithm = "AES256"
       }
     }
+  }
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "HEAD"]
+    allowed_origins = ["*"]
+    expose_headers  = ["ETag", "X-TypeScript-Types"]
+    max_age_seconds = 3000
   }
 }
 
@@ -64,7 +72,7 @@ data "aws_iam_policy_document" "cloudfront_access" {
       "${aws_s3_bucket.modules.arn}/*",
     ]
     principals {
-      type = "AWS"
+      type        = "AWS"
       identifiers = [aws_cloudfront_origin_access_identity.modules_origin_access_identity.iam_arn]
     }
   }
@@ -81,7 +89,7 @@ resource "aws_cloudfront_origin_access_identity" "modules_origin_access_identity
 }
 
 data "aws_route53_zone" "wperron_io" {
-  name         = "wperron.io."
+  name = "wperron.io."
 }
 
 data "aws_acm_certificate" "wildcard_wperron_io" {
@@ -100,8 +108,8 @@ resource "aws_route53_record" "A_deno_wperron_io" {
   name    = local.distro_domain
   type    = "A"
   alias {
-    name = aws_cloudfront_distribution.modules.domain_name
-    zone_id = aws_cloudfront_distribution.modules.hosted_zone_id
+    name                   = aws_cloudfront_distribution.modules.domain_name
+    zone_id                = aws_cloudfront_distribution.modules.hosted_zone_id
     evaluate_target_health = false
   }
 }
@@ -111,8 +119,8 @@ resource "aws_route53_record" "AAAA_deno_wperron_io" {
   name    = local.distro_domain
   type    = "AAAA"
   alias {
-    name = aws_cloudfront_distribution.modules.domain_name
-    zone_id = aws_cloudfront_distribution.modules.hosted_zone_id
+    name                   = aws_cloudfront_distribution.modules.domain_name
+    zone_id                = aws_cloudfront_distribution.modules.hosted_zone_id
     evaluate_target_health = false
   }
 }
@@ -120,7 +128,7 @@ resource "aws_route53_record" "AAAA_deno_wperron_io" {
 resource "aws_cloudfront_distribution" "modules" {
   origin {
     domain_name = aws_s3_bucket.modules.bucket_regional_domain_name
-    origin_id   = "${aws_s3_bucket.modules.id}-origin"
+    origin_id   = "S3-${aws_s3_bucket.modules.id}"
 
     s3_origin_config {
       origin_access_identity = aws_cloudfront_origin_access_identity.modules_origin_access_identity.cloudfront_access_identity_path
@@ -128,9 +136,9 @@ resource "aws_cloudfront_distribution" "modules" {
   }
 
   viewer_certificate {
-    acm_certificate_arn = data.aws_acm_certificate.wildcard_wperron_io.arn
+    acm_certificate_arn      = data.aws_acm_certificate.wildcard_wperron_io.arn
     minimum_protocol_version = "TLSv1.2_2019"
-    ssl_support_method = "sni-only"
+    ssl_support_method       = "sni-only"
   }
 
   enabled             = true
@@ -142,7 +150,7 @@ resource "aws_cloudfront_distribution" "modules" {
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "${aws_s3_bucket.modules.id}-origin"
+    target_origin_id = "S3-${aws_s3_bucket.modules.id}"
 
     forwarded_values {
       query_string = false
