@@ -21,8 +21,8 @@
 
         function leftTrim(str, char = "\s") {
             let offset = 0;
-            while (str[offset] === char) {
-                offset++;
+            while (str.indexOf(char, offset) === 0) {
+                offset += char.length;
             }
             return str.slice(offset);
         }
@@ -30,17 +30,22 @@
         // get directory tree from localstorage at given key
         async function populate(key) {
             const prefix = leftTrim(window.location.pathname, "/");
-            console.log(`pathname: ${prefix}`);
 
             const res = await s3.listObjects({
                 Bucket: "deno.wperron.io",
-                Prefix: prefix,
+                Prefix: prefix ? prefix + "/" : "",
             }).promise();
+
+            console.log(res);
 
             const links = new Set();
             res.Contents.forEach((obj) => {
-                links.add(obj.Key.split("/")[0]);
+                const key = leftTrim(obj.Key, prefix);
+                links.add(key.split("/")[0]);
             });
+
+            // TODO(wperron): figure out why links === [ "" ]
+            console.log(links);
 
             const root = document.querySelector("#content");
             const list = root.appendChild(document.createElement("ul"));
