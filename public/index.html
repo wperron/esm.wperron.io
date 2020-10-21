@@ -10,19 +10,50 @@
     <div id="content"></div>
 
     <script type="module">
+        // const SEPARATORS = ["/", "@"];
         AWS.config.region = 'ca-central-1';
         AWS.config.credentials = new AWS.CognitoIdentityCredentials({
             IdentityPoolId: 'ca-central-1:8b84b2fb-8c78-419a-96e1-5d5a9e79d999',
         });
 
         AWS.config.credentials.refresh();
-
-        console.log(AWS.config.credentials);
-
         const s3 = new AWS.S3();
 
-        s3.listObjects({ Bucket: "deno.wperron.io" }).promise().then(res => {
-            console.log(res);
-        });
+        function leftTrim(str, char = "\s") {
+            let offset = 0;
+            while (str[offset] === char) {
+                offset++;
+            }
+            return str.slice(offset);
+        }
+
+        // get directory tree from localstorage at given key
+        async function populate(key) {
+            const prefix = leftTrim(window.location.pathname, "/");
+            console.log(`pathname: ${prefix}`);
+
+            const res = await s3.listObjects({
+                Bucket: "deno.wperron.io",
+                Prefix: prefix,
+            }).promise();
+
+            const links = new Set();
+            res.Contents.forEach((obj) => {
+                links.add(obj.Key.split("/")[0]);
+            });
+
+            const root = document.querySelector("#content");
+            const list = root.appendChild(document.createElement("ul"));
+            for (const link of links) {
+                const atag = document.createElement("a");
+                atag.innerText = link;
+                atag.setAttribute("href", link);
+                const listitem = document.createElement("li");
+                listitem.appendChild(atag);
+                list.appendChild(listitem);
+            }
+        }
+
+        populate();
     </script>
 </body>
