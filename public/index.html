@@ -10,7 +10,6 @@
     <div id="content"></div>
 
     <script type="module">
-        // const SEPARATORS = ["/", "@"];
         AWS.config.region = 'ca-central-1';
         AWS.config.credentials = new AWS.CognitoIdentityCredentials({
             IdentityPoolId: 'ca-central-1:8b84b2fb-8c78-419a-96e1-5d5a9e79d999',
@@ -20,8 +19,9 @@
         const s3 = new AWS.S3();
 
         function leftTrim(str, char = "\s") {
+            if (char === "") return str;
             let offset = 0;
-            while (str.indexOf(char, offset) === 0) {
+            while (str.indexOf(char, offset) === 0 && offset < str.length) {
                 offset += char.length;
             }
             return str.slice(offset);
@@ -36,16 +36,11 @@
                 Prefix: prefix ? prefix + "/" : "",
             }).promise();
 
-            console.log(res);
-
             const links = new Set();
             res.Contents.forEach((obj) => {
-                const key = leftTrim(obj.Key, prefix);
+                const key = leftTrim(obj.Key, prefix.endsWith("/") ? prefix : prefix + "/");
                 links.add(key.split("/")[0]);
             });
-
-            // TODO(wperron): figure out why links === [ "" ]
-            console.log(links);
 
             const root = document.querySelector("#content");
             const list = root.appendChild(document.createElement("ul"));
