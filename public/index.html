@@ -7,7 +7,7 @@
 <body>
     <h1>Personal Deno Regsitry</h1>
 
-    <div id="content"></div>
+    <section id="content"></section>
 
     <script type="module">
         AWS.config.region = 'ca-central-1';
@@ -27,18 +27,18 @@
             return str.slice(offset);
         }
 
+        const location = leftTrim(window.location.pathname, "/");
+
         // get directory tree from localstorage at given key
         async function populate(key) {
-            const prefix = leftTrim(window.location.pathname, "/");
-
             const res = await s3.listObjects({
                 Bucket: "deno.wperron.io",
-                Prefix: prefix ? prefix + "/" : "",
+                Prefix: location ? location + "/" : "",
             }).promise();
 
             const links = new Set();
             res.Contents.forEach((obj) => {
-                const key = leftTrim(obj.Key, prefix.endsWith("/") ? prefix : prefix + "/");
+                const key = leftTrim(obj.Key, location.endsWith("/") ? location : location + "/");
                 links.add(key.split("/")[0]);
             });
 
@@ -47,7 +47,7 @@
             for (const link of links) {
                 const atag = document.createElement("a");
                 atag.innerText = link;
-                atag.setAttribute("href", link);
+                atag.setAttribute("href", `${location}/${link}`);
                 const listitem = document.createElement("li");
                 listitem.appendChild(atag);
                 list.appendChild(listitem);
