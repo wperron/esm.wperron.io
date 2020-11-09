@@ -147,6 +147,13 @@ resource "aws_cloudfront_distribution" "modules" {
   price_class         = "PriceClass_100"
   default_root_object = "index.html"
 
+  custom_error_response {
+    error_caching_min_ttl = 10
+    error_code            = 404
+    response_code         = 200
+    response_page_path    = "/index.html"
+  }
+
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
     cached_methods   = ["GET", "HEAD"]
@@ -173,4 +180,96 @@ resource "aws_cloudfront_distribution" "modules" {
   }
 
   tags = local.tags
+}
+
+# Cognito Config
+resource "aws_cognito_identity_pool" "main" {
+  identity_pool_name               = "deno_wperron_io_${local.suffix}"
+  allow_unauthenticated_identities = true
+  tags                             = local.tags
+}
+
+resource "aws_cognito_identity_pool_roles_attachment" "main" {
+  identity_pool_id = aws_cognito_identity_pool.main.id
+  roles = {
+    "authenticated"   = aws_iam_role.auth.arn
+    "unauthenticated" = aws_iam_role.unauth.arn
+  }
+}
+
+data "aws_iam_policy_document" "unauth" {
+  statement {
+    actions = [
+      "mobileanalytics:PutEvents",
+      "cognito-sync:*",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    actions = [
+      "s3:ListBucket",
+      "s3:GetObject",
+    ]
+    resources = [aws_s3_bucket.modules.arn]
+  }
+}
+
+data "aws_iam_policy_document" "cognito_identity_unauth" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    principals {
+      type        = "Federated"
+      identifiers = ["cognito-identity.amazonaws.com"]
+    }
+
+    condition {
+      test     = "ForAnyValue:StringLike"
+      variable = "cognito-identity.amazonaws.com:amr"
+      values   = ["unauthenticated"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "cognito-identity.amazonaws.com:aud"
+      values   = [aws_cognito_identity_pool.main.id]
+    }
+  }
+}
+
+data "aws_iam_policy_document" "cognito_identity_auth" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    principals {
+      type        = "Federated"
+      identifiers = ["cognito-identity.amazonaws.com"]
+    }
+
+    condition {
+      test     = "ForAnyValue:StringLike"
+      variable = "cognito-identity.amazonaws.com:amr"
+      values   = ["authenticated"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "cognito-identity.amazonaws.com:aud"
+      values   = [aws_cognito_identity_pool.main.id]
+    }
+  }
+}
+
+resource "aws_iam_role" "unauth" {
+  name               = "deno-wperron-io-unauth-${local.suffix}"
+  assume_role_policy = data.aws_iam_policy_document.cognito_identity_unauth.json
+}
+
+resource "aws_iam_role" "auth" {
+  name               = "deno-wperron-io-auth-${local.suffix}"
+  assume_role_policy = data.aws_iam_policy_document.cognito_identity_auth.json
+}
+
+resource "aws_iam_role_policy" "unauth" {
+  role   = aws_iam_role.unauth.name
+  policy = data.aws_iam_policy_document.unauth.json
 }
