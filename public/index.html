@@ -33,7 +33,9 @@
         async function populate(key) {
             const res = await s3.listObjects({
                 Bucket: "deno.wperron.io",
-                Prefix: location ? location + "/" : "",
+                Prefix: location
+                    ? location.endsWith("/") ? location : location + "/"
+                    : "",
             }).promise();
 
             const links = new Set();
