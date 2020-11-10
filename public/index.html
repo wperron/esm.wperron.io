@@ -41,13 +41,7 @@
             const links = new Set();
             res.Contents.forEach((obj) => {
                 const key = leftTrim(obj.Key, location.endsWith("/") ? location : location + "/");
-                const parts = key.split("/");
-
-                // filter out objects living at the bucket root like index.html
-                // or the aws sdk.
-                if (location === "" && parts.length > 1) {
-                    links.add(parts[0]);
-                }
+                links.add(key.split("/")[0]);
             });
 
             const root = document.querySelector("#content");
