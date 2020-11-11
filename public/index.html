@@ -38,8 +38,17 @@
                     : "",
             }).promise();
 
+            console.log(res);
+
             const links = new Set();
             res.Contents.forEach((obj) => {
+                // filter out objects living at the bucket root like index.html
+                // or the aws sdk.
+                if (location === "" && obj.Key.indexOf("/") === -1) {
+                    console.log(`skipping [ ${obj.Key} ]`);
+                    return;
+                }
+
                 const key = leftTrim(obj.Key, location.endsWith("/") ? location : location + "/");
                 links.add(key.split("/")[0]);
             });
