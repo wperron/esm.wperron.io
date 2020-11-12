@@ -3,15 +3,15 @@ resource "random_uuid" "this" {}
 locals {
   suffix = substr(random_uuid.this.result, 0, 8)
   tags = {
-    "wperron.io/site"     = "deno.wperron.io"
-    "wperron.io/instance" = local.suffix
-    "wperron.io/env"      = var.env
+    "${var.hosted_zone}/site"     = "deno.${var.hosted_zone}"
+    "${var.hosted_zone}/instance" = local.suffix
+    "${var.hosted_zone}/env"      = var.env
   }
 }
 
 # Terraform State Management
 resource "aws_s3_bucket" "state" {
-  bucket = "deno.wperron.io-state-${local.suffix}"
+  bucket = "deno.${var.hosted_zone}-state-${local.suffix}"
   acl    = "private"
   tags   = local.tags
   versioning {
@@ -29,7 +29,7 @@ resource "aws_s3_bucket_public_access_block" "state" {
 
 # Module storage
 resource "aws_s3_bucket" "modules" {
-  bucket = "deno.wperron.io"
+  bucket = "deno.${var.hosted_zone}"
   acl    = "private"
   tags   = local.tags
   versioning {
@@ -88,23 +88,23 @@ resource "aws_cloudfront_origin_access_identity" "modules_origin_access_identity
   comment = "Allows access to the modules bucket from the modules distribution."
 }
 
-data "aws_route53_zone" "wperron_io" {
-  name = "wperron.io."
+data "aws_route53_zone" "this" {
+  name = "${var.hosted_zone}."
 }
 
-data "aws_acm_certificate" "wildcard_wperron_io" {
+data "aws_acm_certificate" "this" {
   provider    = aws.useast
-  domain      = "*.wperron.io"
+  domain      = "*.${var.hosted_zone}"
   types       = ["AMAZON_ISSUED"]
   most_recent = true
 }
 
 locals {
-  distro_domain = trimsuffix("deno.${data.aws_route53_zone.wperron_io.name}", ".")
+  distro_domain = trimsuffix("deno.${data.aws_route53_zone.this.name}", ".")
 }
 
-resource "aws_route53_record" "A_deno_wperron_io" {
-  zone_id = data.aws_route53_zone.wperron_io.zone_id
+resource "aws_route53_record" "A" {
+  zone_id = data.aws_route53_zone.this.zone_id
   name    = local.distro_domain
   type    = "A"
   alias {
@@ -114,8 +114,8 @@ resource "aws_route53_record" "A_deno_wperron_io" {
   }
 }
 
-resource "aws_route53_record" "AAAA_deno_wperron_io" {
-  zone_id = data.aws_route53_zone.wperron_io.zone_id
+resource "aws_route53_record" "AAAA" {
+  zone_id = data.aws_route53_zone.this.zone_id
   name    = local.distro_domain
   type    = "AAAA"
   alias {
@@ -136,7 +136,7 @@ resource "aws_cloudfront_distribution" "modules" {
   }
 
   viewer_certificate {
-    acm_certificate_arn      = data.aws_acm_certificate.wildcard_wperron_io.arn
+    acm_certificate_arn      = data.aws_acm_certificate.this.arn
     minimum_protocol_version = "TLSv1.2_2019"
     ssl_support_method       = "sni-only"
   }
@@ -184,7 +184,7 @@ resource "aws_cloudfront_distribution" "modules" {
 
 # Cognito Config
 resource "aws_cognito_identity_pool" "main" {
-  identity_pool_name               = "deno_wperron_io_${local.suffix}"
+  identity_pool_name               = "deno_${replace(var.hosted_zone, ".", "_")}_${local.suffix}"
   allow_unauthenticated_identities = true
   tags                             = local.tags
 }
@@ -260,12 +260,12 @@ data "aws_iam_policy_document" "cognito_identity_auth" {
 }
 
 resource "aws_iam_role" "unauth" {
-  name               = "deno-wperron-io-unauth-${local.suffix}"
+  name               = "deno-${replace(var.hosted_zone, ".", "-")}-unauth-${local.suffix}"
   assume_role_policy = data.aws_iam_policy_document.cognito_identity_unauth.json
 }
 
 resource "aws_iam_role" "auth" {
-  name               = "deno-wperron-io-auth-${local.suffix}"
+  name               = "deno-${replace(var.hosted_zone, ".", "-")}-auth-${local.suffix}"
   assume_role_policy = data.aws_iam_policy_document.cognito_identity_auth.json
 }
 
