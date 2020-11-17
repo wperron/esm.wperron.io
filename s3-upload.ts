@@ -9,7 +9,7 @@
  * Some functions or classes are taken verbatim from that module.
  */
 
-import { S3Bucket } from "https://deno.land/x/s3@0.2.0/mod.ts";
+import { S3Bucket } from "https://deno.land/x/s3@0.2.1/mod.ts";
 import { walk } from "https://deno.land/std@0.78.0/fs/walk.ts";
 import {
   basename,
