@@ -81,20 +81,20 @@ async function* getFiles(
 
 async function main(): Promise<void> {
   if (args.h ?? args.help) {
-    console.log(`Deno File Server
-    Serves a local directory in HTTP.
+    console.log(`Deno S3 module uploader
+    uploads the content of a directory to S3
 
   INSTALL:
-    deno install --allow-net --allow-read https://deno.land/std/http/file_server.ts
+    deno install --allow-net --allow-read https://raw.githubusercontent.com/wperron/deno.wperron.io/1.0.2/s3-upload.ts
 
   USAGE:
-    file_server [path] [options]
+    s3-upload [path] [options]
 
   OPTIONS:
-    -h, --help            Prints help information
-    -b, --bucket <BUCKET> Set port
-
-    All TLS options are required when one is provided.`);
+    -h, --help              Prints help information
+    -b, --bucket <BUCKET>   Set port
+    -v, --version <VERSION> The version of the module being uploaded. defaults to \`unstable\`
+`);
     Deno.exit();
   }
 
