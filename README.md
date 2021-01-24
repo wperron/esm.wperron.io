@@ -23,7 +23,7 @@ parameter is the name of the DNS hosted to which the website will be attached.
 The website will be deployed as the `deno.` subdomain of that hosted zone.
 
 > :warning: The hosted zone _must_ already exist in Route53, and must be a
-Route53 managed DNS zone.
+> Route53 managed DNS zone.
 
 Before the first apply, you'll need to comment out these lines from the
 `meta.tf` file:
