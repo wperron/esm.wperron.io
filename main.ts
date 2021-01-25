@@ -12,54 +12,69 @@ const bucket = new S3Bucket(
 // deno-lint-ignore no-explicit-any
 addEventListener("fetch", async (event: any) => {
   event.respondWith(
-    await handleRequest(event.request)
+    await handleRequest(event.request),
   );
 });
 
 async function handleRequest(req: Request): Promise<Response> {
-  const res = new Response();
-  const obj = await bucket.getObject(req.url);
-  if (obj) {
-    return new Response(obj.body);
+  try {
+    const res = new Response();
+    const obj = await bucket.getObject(req.url);
+    if (obj) {
+      return new Response(obj.body, {
+        headers: {
+          "Content-Type": obj.contentType ?? "text-plain",
+          "Content-Length": obj.contentLength.toString() ??
+            obj.body.length.toString(),
+          "Etag": obj.etag ?? "",
+          "Cache-Control": obj.cacheControl ?? "max-age=3600",
+        },
+      });
+    }
+
+    const path = leftTrim(new URL(req.url).pathname, "/");
+    const ls = await bucket.listObjects({
+      prefix: path.endsWith("/") ? path : path + "/",
+    });
+
+    const contents = new Set();
+    ls?.contents?.forEach((obj) => {
+      if (obj.key === undefined) return;
+      const key = leftTrim(obj.key, path.endsWith("/") ? path : path + "/");
+      contents.add(key.split("/")[0]);
+    });
+
+    return new Response(
+      html`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf8" />
+          <title>wperron.io | Deno Modules</title>
+        </head>
+        <body>
+          <h1>Personal Deno Registry</h1>
+          <section id="content">
+            <ul>
+              ${
+        Array.from(contents).map((k) => {
+          return html`
+                    <li>
+                      <a href="${path}/${k}">${k}</a>
+                    </li>
+                  `;
+        })
+      }
+            </ul>
+          </section>
+        </body>
+      </html>
+    `,
+      { status: 200, headers: { "Content-Type": "text/plain" } },
+    );
+  } catch (e) {
+    return new Response(e, { status: 500 });
   }
-
-  const path = leftTrim(new URL(req.url).pathname, "/");
-  const ls = await bucket.listObjects({
-    prefix: path.endsWith("/") ? path : path + "/",
-  });
-
-  const contents = new Set()
-  ls?.contents?.forEach((obj) => {
-    if (obj.key === undefined) return;
-    const key = leftTrim(obj.key, path.endsWith("/") ? path : path + "/");
-    contents.add(key.split("/")[0]);
-  });
-
-  return new Response(html`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf8" />
-        <title>wperron.io | Deno Modules</title>
-      </head>
-      <body>
-        <h1>Personal Deno Registry</h1>
-        <section id="content">
-          <ul>
-            ${
-              Array.from(contents).map((k) => {
-                return html`
-                  <li>
-                    <a href="${path}/${k}">${k}</a>
-                  </li>
-                `;
-              })
-            }
-          </ul>
-        </section>
-      </body>
-    </html>
-  `)
 }
 
 // The following code is copied from
@@ -85,7 +100,7 @@ function leftTrim(str: string, char = "\s"): string {
   if (char === "") return str;
   let offset = 0;
   while (str.indexOf(char, offset) === 0 && offset < str.length) {
-      offset += char.length;
+    offset += char.length;
   }
   return str.slice(offset);
 }
