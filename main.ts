@@ -36,29 +36,29 @@ async function handleRequest(req: Request): Promise<Response> {
   });
 
   return new Response(html`
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <meta charset="utf8" />
-      <title>wperron.io | Deno Modules</title>
-    </head>
-    <body>
-      <h1>Personal Deno Registry</h1>
-      <section id="content">
-        <ul>
-          ${
-            Array.from(contents).map((k) => {
-              return html`
-                <li>
-                  <a href="${path}/${k}">${k}</a>
-                </li>
-              `;
-            })
-          }
-        </ul>
-      </section>
-    </body>
-  </html>
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf8" />
+        <title>wperron.io | Deno Modules</title>
+      </head>
+      <body>
+        <h1>Personal Deno Registry</h1>
+        <section id="content">
+          <ul>
+            ${
+              Array.from(contents).map((k) => {
+                return html`
+                  <li>
+                    <a href="${path}/${k}">${k}</a>
+                  </li>
+                `;
+              })
+            }
+          </ul>
+        </section>
+      </body>
+    </html>
   `)
 }
 
