@@ -70,7 +70,7 @@ async function handleRequest(req: Request): Promise<Response> {
         </body>
       </html>
     `,
-      { status: 200, headers: { "Content-Type": "text/plain" } },
+      { status: 200, headers: { "Content-Type": "text/html" } },
     );
   } catch (e) {
     return new Response(e, { status: 500 });
