@@ -29,9 +29,9 @@ async function handleRequest(req: Request): Promise<Response> {
         },
       });
 
-      const cve = obj.meta["x-deno-cve"];
+      const cve = obj.meta["x-deno-known-cve"];
       if (cve) {
-        res.headers.set("X-Deno-CVE", cve);
+        res.headers.set("X-Deno-Known-CVE", cve);
       }
 
       return res;
