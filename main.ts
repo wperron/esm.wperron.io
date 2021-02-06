@@ -18,8 +18,9 @@ addEventListener("fetch", async (event: any) => {
 
 async function handleRequest(req: Request): Promise<Response> {
   try {
-    const res = new Response();
-    const obj = await bucket.getObject(req.url);
+    const obj = await bucket.getObject(
+      leftTrim(new URL(req.url).pathname, "/"),
+    );
     if (obj) {
       return new Response(obj.body, {
         headers: {
@@ -32,9 +33,12 @@ async function handleRequest(req: Request): Promise<Response> {
       });
     }
 
-    const path = leftTrim(new URL(req.url).pathname, "/");
+    let path = leftTrim(new URL(req.url).pathname, "/");
+    if (path !== "") {
+      path = path.endsWith("/") ? path : path + "/";
+    }
     const ls = await bucket.listObjects({
-      prefix: path.endsWith("/") ? path : path + "/",
+      prefix: path,
     });
 
     const contents = new Set();
@@ -60,7 +64,7 @@ async function handleRequest(req: Request): Promise<Response> {
         Array.from(contents).map((k) => {
           return html`
                     <li>
-                      <a href="${path}/${k}">${k}</a>
+                      <a href="${path}${k}">${k}</a>
                     </li>
                   `;
         })
