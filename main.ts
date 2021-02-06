@@ -1,4 +1,4 @@
-import { S3Bucket } from "https://deno.land/x/s3@0.3.0/mod.ts";
+import { S3Bucket } from "https://deno.land/x/s3@0.4.0/mod.ts";
 
 const bucket = new S3Bucket(
   {
@@ -22,15 +22,20 @@ async function handleRequest(req: Request): Promise<Response> {
       leftTrim(new URL(req.url).pathname, "/"),
     );
     if (obj) {
-      return new Response(obj.body, {
+      const res = new Response(obj.body, {
         headers: {
           "Content-Type": obj.contentType ?? "text-plain",
-          "Content-Length": obj.contentLength.toString() ??
-            obj.body.length.toString(),
           "Etag": obj.etag ?? "",
           "Cache-Control": obj.cacheControl ?? "max-age=3600",
         },
       });
+
+      const cve = obj.meta["x-deno-cve"];
+      if (cve) {
+        res.headers.set("X-Deno-CVE", cve);
+      }
+
+      return res;
     }
 
     let path = leftTrim(new URL(req.url).pathname, "/");
