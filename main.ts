@@ -18,10 +18,9 @@ addEventListener("fetch", async (event: any) => {
 
 async function handleRequest(req: Request): Promise<Response> {
   try {
-    const obj = await bucket.getObject(
-      leftTrim(new URL(req.url).pathname, "/"),
-    );
-    if (obj) {
+    let path = leftTrim(new URL(req.url).pathname, "/");
+    const obj = await bucket.getObject(path);
+    if (path !== "" && obj) {
       const res = new Response(obj.body, {
         headers: {
           "Content-Type": obj.contentType ?? "text-plain",
@@ -38,7 +37,6 @@ async function handleRequest(req: Request): Promise<Response> {
       return res;
     }
 
-    let path = leftTrim(new URL(req.url).pathname, "/");
     if (path !== "") {
       path = path.endsWith("/") ? path : path + "/";
     }
