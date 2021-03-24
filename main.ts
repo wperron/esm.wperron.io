@@ -80,6 +80,7 @@ async function handleRequest(req: Request): Promise<Response> {
       { status: 200, headers: { "Content-Type": "text/html" } },
     );
   } catch (e) {
+    console.error(`request failed: ${e}`);
     return new Response(e, { status: 500 });
   }
 }
