@@ -17,8 +17,19 @@ addEventListener("fetch", async (event: any) => {
 });
 
 async function handleRequest(req: Request): Promise<Response> {
+  const reqUrl = new URL(req.url);
+  if (reqUrl.hostname != "esm.wperron.io") {
+    reqUrl.hostname = "esm.wperron.io";
+    return new Response(null, {
+      status: 301,
+      headers: {
+        "Location": reqUrl.toString(),
+      }
+    } as ResponseInit);
+  }
+
   try {
-    let path = leftTrim(new URL(req.url).pathname, "/");
+    let path = leftTrim(reqUrl.pathname, "/");
     const obj = await bucket.getObject(path);
     if (path !== "" && obj) {
       const res = new Response(obj.body, {
