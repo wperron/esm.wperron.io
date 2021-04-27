@@ -1,4 +1,4 @@
-import { S3Bucket } from "https://deno.land/x/s3@0.4.0/mod.ts";
+import { S3Bucket } from "https://deno.land/x/s3@0.4.1/mod.ts";
 
 const bucket = new S3Bucket(
   {

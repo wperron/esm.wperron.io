@@ -9,15 +9,15 @@
  * Some functions or classes are taken verbatim from that module.
  */
 
-import { S3Bucket } from "https://deno.land/x/s3@0.2.1/mod.ts";
-import { walk } from "https://deno.land/std@0.78.0/fs/walk.ts";
+import { S3Bucket } from "https://deno.land/x/s3@0.4.1/mod.ts";
+import { walk } from "https://deno.land/std@0.95.0/fs/walk.ts";
 import {
   basename,
   extname,
   posix,
-} from "https://deno.land/std@0.78.0/path/mod.ts";
-import { pooledMap } from "https://deno.land/std@0.78.0/async/pool.ts";
-import { parse } from "https://deno.land/std@0.78.0/flags/mod.ts";
+} from "https://deno.land/std@0.95.0/path/mod.ts";
+import { pooledMap } from "https://deno.land/std@0.95.0/async/pool.ts";
+import { parse } from "https://deno.land/std@0.95.0/flags/mod.ts";
 
 export interface S3UploaderArgs {
   _: string[];
