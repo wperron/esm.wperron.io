@@ -62,6 +62,8 @@ async function handleRequest(req: Request): Promise<Response> {
       contents.add(key.split("/")[0]);
     });
 
+    console.log(`200 OK ${req.pathname}`);
+
     return new Response(
       html`
       <!DOCTYPE html>
