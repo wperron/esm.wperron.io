@@ -10,3 +10,5 @@ terraform {
     region = "ca-central-1"
   }
 }
+
+data "aws_caller_identity" "this" {}

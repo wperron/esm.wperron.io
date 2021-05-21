@@ -21,6 +21,11 @@ sudo mkdir -p /etc/vector
 sudo mkdir -p /var/lib/vector
 sudo mv /tmp/builder/vector.toml /etc/vector/vector.toml
 
+# Add startup script
+chmod +x /tmp/builder/startup.sh
+sudo mkdir /etc/startup
+sudo mv /tmp/builder/startup.sh /etc/startup/startup.sh
+
 # Clean up uploaded files & apt cache
 rm -rf /tmp/builder/
 sudo apt clean

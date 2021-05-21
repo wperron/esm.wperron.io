@@ -78,3 +78,67 @@ resource "aws_iam_policy" "deno_access" {
   name   = "deno.${var.hosted_zone}-${local.suffix}"
   policy = data.aws_iam_policy_document.deno_access.json
 }
+
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_ami" "vector" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["vector-custom-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  owners = [data.aws_caller_identity.this.id]
+}
+
+resource "aws_security_group" "ssh" {
+  name        = "ssh-${local.suffix}"
+  description = "Inbound SSH access"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    description = "ingress from ssh"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = local.tags
+}
+
+resource "aws_security_group" "outbound" {
+  name        = "outbound-${local.suffix}"
+  description = "Allow all outbound traffic"
+  vpc_id      = data.aws_vpc.default.id
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  tags = local.tags
+}
+
+resource "aws_instance" "vector" {
+  ami           = data.aws_ami.vector.id
+  instance_type = "t3a.micro"
+  user_data     = filebase64("./vector/startup.sh")
+  security_groups = [
+    aws_security_group.ssh.name,
+    aws_security_group.outbound.name,
+  ]
+
+  tags = local.tags
+}
