@@ -73,3 +73,8 @@ data "aws_iam_policy_document" "deno_access" {
     ]
   }
 }
+
+resource "aws_iam_policy" "deno_access" {
+  name   = "deno.${var.hosted_zone}-${local.suffix}"
+  policy = data.aws_iam_policy_document.deno_access.json
+}
