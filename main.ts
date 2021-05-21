@@ -12,9 +12,19 @@ const bucket = new S3Bucket(
 // deno-lint-ignore no-explicit-any
 addEventListener("fetch", async (event: any) => {
   event.respondWith(
-    await handleRequest(event.request),
+    await withLogging(handleRequest)(event.request),
   );
 });
+
+type handler = (r: Request) => Promise<Response>;
+
+function withLogging(f: handler): handler {
+  return async (req: Request) => {
+    const res = await f(req);
+    console.log(`${res.status} ${res.statusText} ${new URL(req.url).pathname}`);
+    return res;
+  }
+}
 
 async function handleRequest(req: Request): Promise<Response> {
   const reqUrl = new URL(req.url);
@@ -61,8 +71,6 @@ async function handleRequest(req: Request): Promise<Response> {
       const key = leftTrim(obj.key, path.endsWith("/") ? path : path + "/");
       contents.add(key.split("/")[0]);
     });
-
-    console.log(`200 OK ${req.pathname}`);
 
     return new Response(
       html`
