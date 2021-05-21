@@ -98,7 +98,7 @@ async function handleRequest(req: Request): Promise<Response> {
         </body>
       </html>
     `,
-      { status: 200, headers: { "Content-Type": "text/html" } },
+      { status: 200, statusText: "OK", headers: { "Content-Type": "text/html" } },
     );
   } catch (e) {
     console.error(`request failed: ${e}`);
