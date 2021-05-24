@@ -40,16 +40,16 @@ export function withFirehose(f: handler, c: AWSConfiguration, s: DeliveryStreamN
             status: res.status,
             statusText: res.statusText,
             path: new URL(req.url).pathname,
+            timestamp: new Date().toISOString(),
           }))
         }
       }));
 
       if (httpStatusCode && httpStatusCode >= 400) {
-        throw new Error(`DynamoDB error ${httpStatusCode}`);
+        throw new Error(`Firehose error ${httpStatusCode}`);
       }
     } catch (error) {
       console.error(error);
-      console.error(`failed to send data to Firehose: ${error}`);
     }
     return res;
   }
