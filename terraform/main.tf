@@ -79,6 +79,7 @@ data "aws_iam_policy_document" "deno_access" {
     ]
     resources = [
       aws_kinesis_firehose_delivery_stream.test_stream.arn,
+      "arn:aws:firehose:ca-central-1:${data.aws_caller_identity.this.id}:deliverystream/test-new-relic", # temp
     ]
   }
 }
