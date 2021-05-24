@@ -17,3 +17,8 @@ variable "loki_password" {
   description = "Grafana Cloud's Loki password"
   type        = string
 }
+
+variable "new_relic_api_key" {
+  description = "New Relic Insights API Key"
+  type        = string
+}
