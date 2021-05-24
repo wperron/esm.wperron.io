@@ -78,7 +78,7 @@ data "aws_iam_policy_document" "deno_access" {
       "firehose:PutRecord",
     ]
     resources = [
-      aws_kinesis_firehose_delivery_stream.test_stream.arn,
+      aws_kinesis_firehose_delivery_stream.new_relic.arn,
     ]
   }
 }
@@ -108,10 +108,25 @@ resource "aws_s3_bucket_public_access_block" "firehose_backup" {
 data "aws_iam_policy_document" "firehose" {
   statement {
     actions = [
+      "s3:AbortMultipartUpload",
+      "s3:GetBucketLocation",
+      "s3:GetObject",
+      "s3:ListBucket",
+      "s3:ListBucketMultipartUploads",
       "s3:PutObject",
     ]
     resources = [
       aws_s3_bucket.firehose_backup.arn,
+      "${aws_s3_bucket.firehose_backup.arn}/*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "logs:PutLogEvents"
+    ]
+    resources = [
+      "arn:aws:logs:ca-central-1:${data.aws_caller_identity.this.id}:log-group:/aws/kinesisfirehose/*"
     ]
   }
 }
@@ -138,25 +153,60 @@ resource "aws_iam_role_policy" "firehose" {
   policy = data.aws_iam_policy_document.firehose.json
 }
 
-resource "aws_kinesis_firehose_delivery_stream" "test_stream" {
-  name        = "esm.wperron.io-logs-${local.suffix}"
+locals {
+  firehose_stream_name = "esm.wperron.io-new-relic-logs-${local.suffix}"
+}
+
+resource "aws_cloudwatch_log_group" "new_relic" {
+  name = "/aws/kinesisfirehose/${local.firehose_stream_name}"
+}
+
+resource "aws_cloudwatch_log_stream" "new_relic_http" {
+  name           = "HttpEndpointDelivery"
+  log_group_name = aws_cloudwatch_log_group.new_relic.name
+}
+
+resource "aws_kinesis_firehose_delivery_stream" "new_relic" {
+  name        = local.firehose_stream_name
   destination = "http_endpoint"
+  tags        = local.tags
 
   s3_configuration {
     role_arn           = aws_iam_role.firehose.arn
     bucket_arn         = aws_s3_bucket.firehose_backup.arn
-    buffer_size        = 10
-    buffer_interval    = 400
-    compression_format = "GZIP"
+    buffer_size        = 5
+    buffer_interval    = 300
+    compression_format = "UNCOMPRESSED"
+
+    cloudwatch_logging_options {
+      enabled         = true
+      log_group_name  = aws_cloudwatch_log_group.new_relic.name
+      log_stream_name = "HttpEndpointDelivery"
+    }
   }
 
   http_endpoint_configuration {
     url                = "https://aws-api.newrelic.com/firehose/v1"
     name               = "New Relic"
     access_key         = var.new_relic_api_key
-    buffering_size     = 15
-    buffering_interval = 600
+    buffering_size     = 5
+    buffering_interval = 60
     role_arn           = aws_iam_role.firehose.arn
     s3_backup_mode     = "AllData"
+
+    cloudwatch_logging_options {
+      enabled         = true
+      log_group_name  = aws_cloudwatch_log_group.new_relic.name
+      log_stream_name = "HttpEndpointDelivery"
+    }
+
+    request_configuration {
+      content_encoding = "GZIP"
+    }
+  }
+
+  server_side_encryption {
+    enabled  = false
+    key_type = "AWS_OWNED_CMK"
   }
 }
