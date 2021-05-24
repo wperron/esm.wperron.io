@@ -166,6 +166,11 @@ resource "aws_cloudwatch_log_stream" "new_relic_http" {
   log_group_name = aws_cloudwatch_log_group.new_relic.name
 }
 
+resource "aws_cloudwatch_log_stream" "new_relic_s3" {
+  name           = "S3Delivery"
+  log_group_name = aws_cloudwatch_log_group.new_relic.name
+}
+
 resource "aws_kinesis_firehose_delivery_stream" "new_relic" {
   name        = local.firehose_stream_name
   destination = "http_endpoint"
@@ -181,7 +186,7 @@ resource "aws_kinesis_firehose_delivery_stream" "new_relic" {
     cloudwatch_logging_options {
       enabled         = true
       log_group_name  = aws_cloudwatch_log_group.new_relic.name
-      log_stream_name = "HttpEndpointDelivery"
+      log_stream_name = "S3Delivery"
     }
   }
 
