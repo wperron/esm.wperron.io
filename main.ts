@@ -1,4 +1,5 @@
 import { S3Bucket } from "https://deno.land/x/s3@0.4.1/mod.ts";
+import { withLogging, withFirehose } from "./utils.ts";
 
 const bucket = new S3Bucket(
   {
@@ -12,19 +13,19 @@ const bucket = new S3Bucket(
 // deno-lint-ignore no-explicit-any
 addEventListener("fetch", async (event: any) => {
   event.respondWith(
-    await withLogging(handleRequest)(event.request),
+    await withFirehose(
+      withLogging(handleRequest),
+      {
+        region: "ca-central-1",
+        credrentials: {
+          accessKeyId: Deno.env.get("AWS_ACCESS_KEY_ID")!,
+          secretAccessKey: Deno.env.get("AWS_SECRET_ACCESS_KEY")!,
+        },
+      },
+      Deno.env.get("FIREHOSE_STREAM")!,
+    )(event.request),
   );
 });
-
-type handler = (r: Request) => Promise<Response>;
-
-function withLogging(f: handler): handler {
-  return async (req: Request) => {
-    const res = await f(req);
-    console.log(`${res.status} ${res.statusText} ${new URL(req.url).pathname}`);
-    return res;
-  }
-}
 
 async function handleRequest(req: Request): Promise<Response> {
   const reqUrl = new URL(req.url);
@@ -98,7 +99,7 @@ async function handleRequest(req: Request): Promise<Response> {
         </body>
       </html>
     `,
-      { status: 200, headers: { "Content-Type": "text/html" } },
+      { status: 200, statusText: "OK", headers: { "Content-Type": "text/html" } },
     );
   } catch (e) {
     console.error(`request failed: ${e}`);
