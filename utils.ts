@@ -40,7 +40,7 @@ export function withFirehose(f: handler, c: AWSConfiguration, s: DeliveryStreamN
             status: res.status,
             statusText: res.statusText,
             path: new URL(req.url).pathname,
-            timestamp: new Date().toISOString(),
+            timestamp: new Date().getTime(),
           }))
         }
       }));
