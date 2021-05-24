@@ -1,0 +1,27 @@
+# Set global options
+data_dir = "/var/lib/vector"
+
+# Vector's API (disabled by default)
+# Enable and try it out with the `vector top` command
+[api]
+enabled = false
+# address = "127.0.0.1:8686"
+
+[sources.firehose]
+type                   = "aws_kinesis_firehose"
+address                = "0.0.0.0:443"
+tls.verify_certificate = false
+
+[sinks.loki]
+# General
+type          = "loki" # required
+inputs        = ["firehose"] # required
+endpoint      = "https://logs-prod-us-central1.grafana.net"
+auth.strategy = "basic"
+auth.user     = "${LOKI_USER}"
+auth.password = "${LOKI_PASSWORD}"
+healthcheck   = false
+# Encoding
+encoding.codec = "json" # required
+# Labels
+labels.forwarder   = "vector"
