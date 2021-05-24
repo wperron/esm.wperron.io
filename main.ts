@@ -17,7 +17,7 @@ addEventListener("fetch", async (event: any) => {
       withLogging(handleRequest),
       {
         region: "ca-central-1",
-        credrentials: {
+        credentials: {
           accessKeyId: Deno.env.get("AWS_ACCESS_KEY_ID")!,
           secretAccessKey: Deno.env.get("AWS_SECRET_ACCESS_KEY")!,
         },
@@ -29,7 +29,7 @@ addEventListener("fetch", async (event: any) => {
 
 async function handleRequest(req: Request): Promise<Response> {
   const reqUrl = new URL(req.url);
-  if (reqUrl.hostname != "esm.wperron.io") {
+  if (reqUrl.hostname.endsWith("wperron.io") && reqUrl.hostname != "esm.wperron.io") {
     reqUrl.hostname = "esm.wperron.io";
     return new Response(null, {
       status: 301,

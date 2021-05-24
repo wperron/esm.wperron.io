@@ -12,7 +12,7 @@ export function withLogging(f: handler): handler {
 
 export type AWSConfiguration = {
   region: string,
-  credrentials: AWSCredentials
+  credentials: AWSCredentials
 }
 
 export type AWSCredentials = {
@@ -25,6 +25,7 @@ export type DeliveryStreamName = string;
 export function withFirehose(f: handler, c: AWSConfiguration, s: DeliveryStreamName): handler {
   // @ts-ignore
   const client = new FirehoseClient(c);
+  const encoder = new TextEncoder();
   return async (req: Request) => {
     const res = await f(req);
     // async/await.
@@ -35,9 +36,11 @@ export function withFirehose(f: handler, c: AWSConfiguration, s: DeliveryStreamN
       } = await client.send(new PutRecordCommand({
         DeliveryStreamName: s,
         Record: {
-          status: res.status,
-          statusText: res.statusText,
-          path: new URL(req.url).pathname,
+          Data: encoder.encode(JSON.stringify({
+            status: res.status,
+            statusText: res.statusText,
+            path: new URL(req.url).pathname,
+          }))
         }
       }));
 
@@ -45,6 +48,7 @@ export function withFirehose(f: handler, c: AWSConfiguration, s: DeliveryStreamN
         throw new Error(`DynamoDB error ${httpStatusCode}`);
       }
     } catch (error) {
+      console.error(error);
       console.error(`failed to send data to Firehose: ${error}`);
     }
     return res;
