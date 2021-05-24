@@ -72,6 +72,15 @@ data "aws_iam_policy_document" "deno_access" {
       "${aws_s3_bucket.modules.arn}/*",
     ]
   }
+
+  statement {
+    actions = [
+      "firehose:PutRecord",
+    ]
+    resources = [
+      aws_kinesis_firehose_delivery_stream.test_stream.arn,
+    ]
+  }
 }
 
 resource "aws_iam_policy" "deno_access" {
