@@ -1,5 +1,5 @@
 import { S3Bucket } from "https://deno.land/x/s3@0.4.1/mod.ts";
-import { withLogging, withFirehose } from "./utils.ts";
+import { withLogging } from "./utils.ts";
 
 const bucket = new S3Bucket(
   {
