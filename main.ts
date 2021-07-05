@@ -13,17 +13,7 @@ const bucket = new S3Bucket(
 // deno-lint-ignore no-explicit-any
 addEventListener("fetch", async (event: any) => {
   event.respondWith(
-    await withFirehose(
-      withLogging(handleRequest),
-      {
-        region: "ca-central-1",
-        credentials: {
-          accessKeyId: Deno.env.get("AWS_ACCESS_KEY_ID")!,
-          secretAccessKey: Deno.env.get("AWS_SECRET_ACCESS_KEY")!,
-        },
-      },
-      Deno.env.get("FIREHOSE_STREAM")!,
-    )(event.request),
+    withLogging(handleRequest),
   );
 });
 
