@@ -13,7 +13,7 @@ const bucket = new S3Bucket(
 // deno-lint-ignore no-explicit-any
 addEventListener("fetch", async (event: any) => {
   event.respondWith(
-    withLogging(handleRequest),
+    await withLogging(handleRequest)(event.request),
   );
 });
 
